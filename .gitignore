@@ -1,0 +1,49 @@
+# Archivos de Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.swp
+*.swo
+
+# Entornos virtuales
+venv/
+.env
+*.env
+*.venv
+
+# Archivos de dependencias
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Configuración de IDEs y editores
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+
+# Archivos de Django
+db.sqlite3
+media/      # Archivos subidos por usuarios
+staticfiles/ # Archivos estáticos generados
+*.log       # Logs de ejecución
+
+# Archivos de Docker y despliegue (opcional)
+docker-compose.override.yml
+.env.docker
+
+# Archivos de migraciones (opcional)
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Archivos de compilación/caché
+*.egg-info/
+dist/
+build/
+
+# Archivos de pruebas y cobertura
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+test_*.py
