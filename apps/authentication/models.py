@@ -3,6 +3,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.template.defaultfilters import first
 
+
 # Create your models here.
 
 
@@ -22,7 +23,7 @@ class APIUserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
 
         if extra_fields.get("is_staff") is not True:
-            raise ValueError("El userusuario debe tener is_staff=True")
+            raise ValueError("El superusuario debe tener is_staff=True")
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("El superusuario debe tener is_superuser=True")
 
@@ -30,8 +31,8 @@ class APIUserManager(BaseUserManager):
 
 
 class APIUser(AbstractBaseUser, PermissionsMixin):
-    # Aquí se definiran las apps clientes
-    APP_CHOICES = [("pedidos", "PEDIDOS")]
+    # Aquí se definirán las apps clientes
+    APP_CHOICES = [("pedidos", "PEDIDOS"), ("mi_app_web", "MI APP WEB"), ("mi_app_movil", "MI APP MOVIL")]
     email = models.EmailField(unique=True)
     # Campo para el username
     username = models.CharField(max_length=100, unique=True, blank=True, null=True)

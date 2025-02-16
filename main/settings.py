@@ -10,11 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
 import os
-from django.conf.global_settings import AUTH_USER_MODEL
+from datetime import timedelta
+from pathlib import Path
+
 import environ
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,21 +24,17 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 env = environ.Env(
     # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(bool, True)
 )
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
-
-ALLOWED_HOSTS = []
-
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -47,13 +43,19 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Aplicaciones de terceros
     "rest_framework",
+    "drf_spectacular",
     "django_filters",
     "corsheaders",
     "rest_framework_simplejwt",
     "oauth2_provider",
+
+    # Aplicaciones propias
     "apps.authentication",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -64,6 +66,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Middleware para autenticación por aplicación
+    "apps.authentication.middleware.AppAuthenticationMiddleware",
 ]
 
 ROOT_URLCONF = "main.urls"
@@ -86,7 +90,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "main.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -96,7 +99,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -116,7 +118,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -127,7 +128,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -146,17 +146,99 @@ AUTH_USER_MODEL = "authentication.APIUser"
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",  # OAuth2 si necesitas usar OAuth
-        "rest_framework_simplejwt.authentication.JWTAuthentication",  # Usamos JWT por defecto
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.BasicAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.SessionAuthentication",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Api Auth",
+    "DESCRIPTION": "Api para autenticación centralizada de usuarios.",
+    "VERSION": "1.0.0",
+    "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
+    # 'x-spectacular-sidecar': {
+    #     'paths': ['oauth2.yml'],
+    # },
+    # OTHER SETTINGS AS NEEDED
 }
 
 OAUTH2_PROVIDER = {
-    "ACCESS_TOKEN_EXPIRE_SECONDS": 36000,
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 2592000,
     "AUTHORIZATION_CODE_EXPIRE_SECONDS": 600,
     "CLIENT_ID_GENERATOR_CLASS": "oauth2_provider.generators.ClientIdGenerator",
     "CLIENT_SECRET_GENERATOR_CLASS": "oauth2_provider.generators.ClientSecretGenerator",
     "ALLOWED_GRANT_TYPES": ["password", "authorization_code", "refresh_token"],
+    "SCOPES": {
+        "read": "Read access",
+        "write": "Write access",
+    },
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),  # Duración del token de acceso
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Duración del token de refresco
+    "ROTATE_REFRESH_TOKENS": True,  # Rotar tokens de refresco en cada solicitud
+    "BLACKLIST_AFTER_ROTATION": True,  # Invalidar el token de refresco anterior después de la rotación
+    "UPDATE_LAST_LOGIN": False,  # Actualizar la última fecha de inicio de sesión
+    "ALGORITHM": "HS256",  # Algoritmo de firma (recomendado HS256 o RS256)
+    "SIGNING_KEY": SECRET_KEY,  # Clave secreta para firmar los tokens (usa la misma que SECRET_KEY o una diferente)
+    # "VERIFYING_KEY": None, # Clave pública para verificar los tokens (necesaria si usas RS256)
+    "AUDIENCE": None,  # Audiencia del token (opcional)
+    "ISSUER": "api_auth",  # Emisor del token (opcional)
+    "JWK_URL": None,
+    # URL para obtener la clave pública en formato JWK (necesaria si usas RS256 y la clave no está en el archivo)
+    "LEEWAY": 0,  # Tolerancia de tiempo para la validación de tokens (opcional)
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Tipo de encabezado de autorización
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",  # Nombre del encabezado de autorización
+    "USER_ID_FIELD": "id",  # Campo que identifica al usuario en el token
+    "USER_ID_CLAIM": "user_id",  # Nombre del claim que contiene el ID del usuario en el token
+    "AUTH_TOKEN_CLASSES": (
+        "rest_framework_simplejwt.tokens.AccessToken",
+    ),  # Clases de tokens a usar
+    "TOKEN_TYPE_CLAIM": "token_type",  # Nombre del claim que contiene el tipo de token
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    # Nombre del claim que contiene la fecha de expiración del token de refresco
+    "SLIDING_TOKEN_LIFETIME": timedelta(
+        minutes=5
+    ),  # Duración del token de acceso con refresh sliding
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(
+        days=1
+    ),  # Duración del token de refresco con refresh sliding
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'json': {
+            'format': '%(message)s',  # El mensaje ya está en formato JSON
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/api.log',
+            'formatter': 'json',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'api': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
 }

@@ -47,3 +47,5 @@ htmlcov/
 .tox/
 nosetests.xml
 test_*.py
+secret_client.txt
+logs/
