@@ -1,69 +1,96 @@
-# API Authentication Service
+# API de Autenticación Centralizada
 
-A Django REST Framework-based authentication service that provides multiple authentication methods including OAuth2 and JWT.
+Un servicio de autenticación basado en Django REST Framework diseñado para proyectos personales, que permite múltiples
+métodos de autenticación dependiendo de la aplicación que lo consuma.
 
-## Features
+## Características
 
-- User registration and management
-- Multiple authentication methods:
-  - OAuth2 (password, authorization_code, refresh_token)
-  - JWT (access and refresh tokens)
-- Token introspection
-- Application-based user registration
-- Detailed API logging
+- Servicio de autenticación centralizado para múltiples aplicaciones
+- Registro y gestión de usuarios
+- Compatible con múltiples métodos de autenticación:
+    - OAuth2 (password, authorization_code, refresh_token)
+    - JWT (tokens de acceso y refresco)
+- Introspección de tokens para validación segura
+- Registro de usuarios basado en la aplicación que consume la API mediante el encabezado X-App-Name
+- Registro detallado de eventos y monitoreo de seguridad
 
-## Technical Stack
+## Tecnologías utilizadas
 
 - Python
 - Django
 - Django REST Framework
 - Django OAuth Toolkit
 - Simple JWT
-- drf-spectacular (for OpenAPI documentation)
+- drf-spectacular (para documentación OpenAPI)
 
-## API Endpoints
+## Endpoints de la API
 
-### Authentication
+### Autenticación
 
-#### SignUp
+#### Registro de usuario
+
 - `POST /signup/`
-  - Register new users
-  - Requires `X-App-Name` header
+    - Registra nuevos usuarios
+    - Requiere el encabezado X-App-Name
 
 #### OAuth2
-- `POST /oauth/token/`
-  - Obtain OAuth2 access tokens
-  - Supports multiple grant types
-- `POST /oauth/revoke/`
-  - Revoke OAuth2 tokens
-- `POST /oauth/introspect/`
-  - Introspect OAuth2 tokens
 
-#### JWT
-- `POST /jwt/token/`
-  - Obtain JWT access and refresh tokens
-- `POST /jwt/refresh/`
-  - Refresh JWT tokens
+- `POST /o/token/`
+    - Obtiene tokens de acceso OAuth2
+    - Soporta múltiples tipos de flujo
+- `POST /o/revoke_token/`
+    - Revoca tokens OAuth2
+- `POST /o/introspect/`
+    - Verifica la validez de un token OAuth2
+
+#### JWT (JSON Web Token)
+
+- `POST /token/`
+    - Obtiene tokens de acceso y refresco JWT
+- `POST /token/refresh/`
+    - Renueva tokens JWT
 
 ### User Management
+
 - `GET /users/`
-  - List users (authenticated)
+    - Lista todos los usuarios (requiere autenticación)
 - `GET /users/{id}/`
-  - Retrieve user details
+    - Obtiene detalles de un usuario específico
 - `PUT /users/{id}/`
-  - Update user information
+    - Actualiza la información de un usuario
 - `DELETE /users/{id}/`
-  - Delete user
+    - Elimina un usuario
 
-## Security
+## Seguridad
 
-- Authentication required for user management endpoints
-- Scope-based permission system
-- Request logging and monitoring
+- Autenticación obligatoria para los endpoints de gestión de usuarios
+- Sistema de permisos basado en alcances (scopes)
+- Registro de solicitudes y monitoreo de seguridad
 
-## Installation
+## Instalación
 
-1. Clone the repository
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
+1. Clonar el repositorio:
+    ```bash
+    git clone <URL_DEL_REPOSITORIO>
+    cd <NOMBRE_DEL_REPOSITORIO>
+    ```
+
+2. Instalar las dependencias:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3. Crear un archivo `.env` y definir las variables de entorno necesarias.
+
+4. Crear la carpeta `logs/`:
+    ```bash
+    mkdir logs
+    ```
+
+5. Crear y ejecutar las migraciones de la base de datos:
+    ```bash
+   python manage.py makemigrations
+    python manage.py migrate
+    ```
+
+6. En caso de despliegue, configurar `wsgi.py` correctamente según el servidor o proyecto.
