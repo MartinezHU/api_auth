@@ -1,3 +1,4 @@
+import base64
 import os
 from pathlib import Path
 
@@ -31,7 +32,7 @@ from .swagger_doc import SPECTACULAR_SETTINGS as SWAGGER_SETTINGS
 from .logging import LOGGING
 
 INSTALLED_APPS = INSTALLED_APPS
-JWT = JWT
+SIMPLE_JWT = JWT
 OAUTH2 = OAUTH2
 AUTH_METHODS = AUTH_METHODS
 REST_FRAMEWORK = DRF_SETTINGS
@@ -119,3 +120,10 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
+# CELERY_RESULT_BACKEND = 'disabled'  # Desactiva el almacenamiento de resultados
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'

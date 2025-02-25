@@ -14,6 +14,7 @@ from apps.authentication.serializers import (
     OAuthTokenRequestSerializer,
     OAuthRevokeSerializer, APIUserSerializer,
 )
+from apps.authentication.tasks import send_user_to_queue
 from apps.authentication.utils import generate_auth_token
 from main.logging_config import log_api_call, APILogger
 
@@ -54,7 +55,6 @@ class SignUpViewSet(ModelViewSet):
 
     @log_api_call(level='info')
     def create(self, request, *args, **kwargs):
-
         app_name = getattr(request, "app_name", None)
         auth_type = getattr(request, "auth_type", None)
 
@@ -97,9 +97,12 @@ class SignUpViewSet(ModelViewSet):
                 "message": "Usuario creado exitosamente",
                 # Agregamos el nombre de la aplicación a la respuesta y los datos del token
                 "app": app_name,
-                **token_data,
             }
+            response_data.update(token_data)
             headers = self.get_success_headers(serializer.data)
+
+            # Llamamos a la tarea de Celery para enviar los datos a RabbitMQ
+            send_user_to_queue.delay(user.id, auth_type)
 
             return Response(response_data, headers=headers)
 

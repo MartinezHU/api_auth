@@ -3,7 +3,7 @@ import uuid
 from enum import Enum
 
 from oauth2_provider.models import AccessToken as OAuthAccessToken, RefreshToken as OAuthRefreshToken, Application
-from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken, AccessToken as JWTAccessToken
 
 
 class AuthType(Enum):
@@ -25,7 +25,7 @@ def generate_auth_token(user, auth_type: str):
 
     Raises:
         ValueError: Si el tipo de autenticación no es válido o hay errores de configuración
-        NotImplementedError: Si se intenta usar autenticación Firebase
+        NotImplementedError: Sí se intenta usar autenticación Firebase
     """
     auth_type = auth_type.lower()
     if auth_type not in AuthType._value2member_map_:
@@ -39,9 +39,9 @@ def generate_auth_token(user, auth_type: str):
         elif auth_type == AuthType.FIREBASE.value:
             raise NotImplementedError("Autenticación con Firebase no implementada")
     except Application.DoesNotExist as e:
-        raise ValueError("Aplicación OAuth2 no configurada correctamente") from e
+        raise ValueError("Aplicación OAuth2 no configurada correctamente")
     except Exception as e:
-        raise ValueError(f"Error al generar token: {str(e)}") from e
+        raise ValueError(f"Error al generar token: {str(e)}")
 
 
 def generate_jwt_token(user):

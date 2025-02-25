@@ -32,7 +32,7 @@ class APIUserManager(BaseUserManager):
 
 class APIUser(AbstractBaseUser, PermissionsMixin):
     # Aquí se definirán las apps clientes
-    APP_CHOICES = [("pedidos", "PEDIDOS"), ("mi_app_web", "MI APP WEB"), ("mi_app_movil", "MI APP MOVIL")]
+    APP_CHOICES = [("pedidos", "PEDIDOS"), ("mi_app_web", "MI APP WEB"), ("api_blog", "API BLOG")]
     email = models.EmailField(unique=True)
     # Campo para el username
     username = models.CharField(max_length=100, unique=True, blank=True, null=True)
