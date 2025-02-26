@@ -122,8 +122,18 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
-# CELERY_RESULT_BACKEND = 'disabled'  # Desactiva el almacenamiento de resultados
+# CELERY_TASK_DEFAULT_QUEUE = 'celery_queue'  # Cola predeterminada para tareas de Celery
+# CELERY_TASK_ROUTES = {
+#     'mi_app.tasks.send_user_to_queue': {'queue': 'celery_queue'},
+#     # 'apps.notifications.tasks.*': {'queue': 'notifications_queue'}, # Definir la cola para tareas específicas
+#     #...
+# }
+
+# CELERY_RESULT_BACKEND = 'disabled'  # Para almacenar resultados en lugar de enviarlos a un backend
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# Para trabajar con el tiempo de espera, reintentos, etc.
+# CELERY_TASK_ACKS_LATE = True  # Confirmar tareas después de que se hayan procesado
+# CELERY_TIMEZONE = 'UTC'  # Ajusta la zona horaria si es necesario

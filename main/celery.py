@@ -17,4 +17,4 @@ app.autodiscover_tasks()
 # Opcional: para debugging
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
-    print(f'Request: {self.request!r}')
+    print('Request: {0!r}'.format(self.request))

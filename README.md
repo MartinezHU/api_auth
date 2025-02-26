@@ -13,6 +13,8 @@ métodos de autenticación dependiendo de la aplicación que lo consuma.
 - Introspección de tokens para validación segura
 - Registro de usuarios basado en la aplicación que consume la API mediante el encabezado X-App-Name
 - Registro detallado de eventos y monitoreo de seguridad
+- Documentación OpenAPI con drf-spectacular (Swagger UI)
+- Gestion de cola de mensajes con RabbitMQ
 
 ## Tecnologías utilizadas
 
@@ -89,8 +91,13 @@ métodos de autenticación dependiendo de la aplicación que lo consuma.
 
 5. Crear y ejecutar las migraciones de la base de datos:
     ```bash
-   python manage.py makemigrations
+    python manage.py makemigrations
     python manage.py migrate
     ```
 
-6. En caso de despliegue, configurar `wsgi.py` correctamente según el servidor o proyecto.
+6. Crear contenedor de RabbitMQ:
+    ```bash
+    docker run --name rabbitmq-container -p 5672:5672 -p 15672:15672 -d rabbitmq:management
+    ```
+
+7. En caso de despliegue, configurar `wsgi.py` correctamente según el servidor o proyecto.
