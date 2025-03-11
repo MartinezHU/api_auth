@@ -3,12 +3,20 @@ from oauth2_provider import urls as oauth2_urls
 from oauth2_provider import views as oauth2_views
 from rest_framework.routers import SimpleRouter
 
-from apps.authentication.views import SignUpViewSet, OAuthViews, JWTViews, UserViewSet
+from apps.authentication.views import (
+    SignUpViewSet,
+    OAuthViews,
+    JWTViews,
+    UserViewSet,
+    me,
+    LogoutView,
+)
 
 router = SimpleRouter()
 
 router.register(r"signup", SignUpViewSet, basename="signup")
 router.register(r"users", UserViewSet, basename="users")
+# router.register(r"logout", LogoutView, basename="logout")
 
 urlpatterns = [
     # Rutas para JWT
@@ -52,5 +60,7 @@ urlpatterns = [
             ]
         ),
     ),
+    path("me/", me, name="me"),
+    path("logout/", LogoutView.as_view(), name="me"),
     path("", include(router.urls)),
 ]

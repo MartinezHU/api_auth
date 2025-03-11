@@ -1,4 +1,3 @@
-import base64
 import os
 from pathlib import Path
 
@@ -49,7 +48,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Middleware para controlar la autenticación por aplicación cliente
-    "apps.authentication.middleware.AppAuthenticationMiddleware",
+    "apps.authentication.middlewares.AppAuthenticationMiddleware",
 ]
 
 # URL de las rutas principales de la aplicación
@@ -137,3 +136,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 # Para trabajar con el tiempo de espera, reintentos, etc.
 # CELERY_TASK_ACKS_LATE = True  # Confirmar tareas después de que se hayan procesado
 # CELERY_TIMEZONE = 'UTC'  # Ajusta la zona horaria si es necesario
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True

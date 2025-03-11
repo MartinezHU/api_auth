@@ -1,6 +1,9 @@
 import re
+
+from django.contrib.auth.hashers import check_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.authentication.models import APIUser
 
@@ -9,9 +12,18 @@ class APIUserSerializer(serializers.ModelSerializer):
     """
     Serializador para el modelo de usuario API.
     """
+
     class Meta:
         model = APIUser
-        fields = ['id', 'email', 'is_active', 'is_staff', 'is_superuser', 'username', 'origin_app']
+        fields = [
+            "id",
+            "email",
+            "is_active",
+            "is_staff",
+            "is_superuser",
+            "username",
+            "origin_app",
+        ]
 
 
 class APIUserRegistrationSerializer(serializers.ModelSerializer):
@@ -19,12 +31,14 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
     Serializador para el registro de usuarios API.
     Maneja la validación y creación de nuevos usuarios.
     """
+
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(
-            queryset=APIUser.objects.all(),
-            message="El email ya está en uso"
-        )]
+        validators=[
+            UniqueValidator(
+                queryset=APIUser.objects.all(), message="El email ya está en uso"
+            )
+        ],
     )
 
     password = serializers.CharField(
@@ -35,7 +49,7 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = APIUser
-        fields = ['email', 'password']
+        fields = ["email", "password"]
 
     @staticmethod
     def validate_password(value):
@@ -46,10 +60,10 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
 
         # Definimos los patrones de validación
         patterns = {
-            r'.{8,}': "La contraseña debe tener al menos 8 caracteres.",
-            r'[A-Z]': "La contraseña debe contener al menos una letra mayúscula.",
-            r'[a-z]': "La contraseña debe contener al menos una letra minúscula.",
-            r'[!@#$%^&*(),.?":{}|<>]': "La contraseña debe contener al menos un signo de puntuación."
+            r".{8,}": "La contraseña debe tener al menos 8 caracteres.",
+            r"[A-Z]": "La contraseña debe contener al menos una letra mayúscula.",
+            r"[a-z]": "La contraseña debe contener al menos una letra minúscula.",
+            r'[!@#$%^&*(),.?":{}|<>]': "La contraseña debe contener al menos un signo de puntuación.",
         }
 
         # Validamos cada patrón
@@ -65,7 +79,7 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
         """
         try:
             return APIUser.objects.create_user(
-                email=validated_data['email'], password=validated_data['password']
+                email=validated_data["email"], password=validated_data["password"]
             )
         except Exception as e:
             raise serializers.ValidationError(f"Error al crear el usuario: {e}") from e
@@ -77,7 +91,9 @@ class OAuthTokenRequestSerializer(serializers.Serializer):
     """
 
     client_id = serializers.CharField(help_text="ID de la aplicación cliente")
-    client_secret = serializers.CharField(help_text="Clave secreta de la aplicación cliente", required=False)
+    client_secret = serializers.CharField(
+        help_text="Clave secreta de la aplicación cliente", required=False
+    )
 
     username = serializers.CharField(help_text="Email del usuario", required=False)
     password = serializers.CharField(help_text="Contraseña del usuario", required=False)
@@ -114,5 +130,42 @@ class OAuthRevokeSerializer(serializers.Serializer):
     token_type_hint = serializers.ChoiceField(
         choices=["access_token", "refresh_token"],
         help_text="Tipo de token a revocar",
-        required=False
+        required=False,
     )
+
+
+class APITokenObtainPairSerializer(serializers.Serializer):
+    """
+    Serializador para la obtención de pares de tokens JWT.
+    """
+
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        # Validamos que el usuario exista y esté activo
+        user = APIUser.objects.filter(email=email).first()
+        if not user or not user.is_active:
+            raise serializers.ValidationError("Usuario no válido o inactivo")
+
+        # Validamos que la contraseña sea correcta
+        if not check_password(password, user.password):
+            raise serializers.ValidationError("Contraseña incorrecta")
+
+        # Generamos los tokens JWT
+        refresh = RefreshToken.for_user(user)
+
+        # Información adicional al token
+        # if hasattr(user, 'profile'):
+        #     refresh["role"] = user.profile.role
+        #     refresh["permissions"] = list(user.get_all_permissions())
+
+        data = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        }
+
+        return data

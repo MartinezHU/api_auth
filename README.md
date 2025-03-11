@@ -107,3 +107,4 @@ métodos de autenticación dependiendo de la aplicación que lo consuma.
 1. Gestión persistente de la cosa de mensajes con RabbitMQ (Permitir reintentos, recuperación de cola, etc.)
 2. Implementar autenticación con otros métodos de autenticación (Google, Facebook, etc.)
 3. Mejorar gestión de usuarios y roles (crear permisos más granulares, etc.)
+4. Comprobar la clase de autenticación personalizada correctamente.

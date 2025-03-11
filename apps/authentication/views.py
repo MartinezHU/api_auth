@@ -1,7 +1,11 @@
+import datetime
+
+from django.contrib.auth.hashers import check_password
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
 from oauth2_provider.views import TokenView, IntrospectTokenView
 from rest_framework import serializers
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,7 +16,9 @@ from apps.authentication.models import APIUser
 from apps.authentication.serializers import (
     APIUserRegistrationSerializer,
     OAuthTokenRequestSerializer,
-    OAuthRevokeSerializer, APIUserSerializer,
+    OAuthRevokeSerializer,
+    APIUserSerializer,
+    APITokenObtainPairSerializer,
 )
 from apps.authentication.tasks import send_user_to_queue
 from apps.authentication.utils import generate_auth_token
@@ -45,7 +51,7 @@ from main.logging_config import log_api_call, APILogger
             description="Nombre de la aplicación cliente",
             required=True,
         )
-    ]
+    ],
 )
 class SignUpViewSet(ModelViewSet):
     queryset = APIUser.objects.none()
@@ -53,21 +59,22 @@ class SignUpViewSet(ModelViewSet):
     http_method_names = ["post"]
     permission_classes = [AllowAny]
 
-    @log_api_call(level='info')
+    @log_api_call(level="info")
     def create(self, request, *args, **kwargs):
         app_name = getattr(request, "app_name", None)
         auth_type = getattr(request, "auth_type", None)
 
         if not app_name or not auth_type:
             APILogger.log_request(
-                'warning',
-                'SingUp Failed: App name or auth type not provided',
+                "warning",
+                "SingUp Failed: App name or auth type not provided",
                 request,
-                {'validation_error': 'Missing app name or auth type'}
+                {"validation_error": "Missing app name or auth type"},
             )
             return Response(
                 {"error": "No se ha proporcionado el nombre de la aplicación"},
-                status=400)
+                status=400,
+            )
 
         serializer = self.get_serializer(data=request.data)
 
@@ -84,10 +91,10 @@ class SignUpViewSet(ModelViewSet):
 
             # Log de creación de usuario exitosa
             APILogger.log_request(
-                'info',
+                "info",
                 f"User Created Successfully: {user.id}",
                 request,
-                {'user_id': str(user.id)}
+                {"user_id": str(user.id)},
             )
 
             # Generamos los tokens de autenticación según el tipo
@@ -134,7 +141,7 @@ class OAuthViews:
             },
             tags=["OAuth2"],
         )
-        @log_api_call(level='info')
+        @log_api_call(level="info")
         def post(self, request, *args, **kwargs):
             return super().post(request, *args, **kwargs)
 
@@ -174,16 +181,16 @@ class OAuthViews:
             },
             tags=["OAuth2"],
         )
-        @log_api_call(level='info')
+        @log_api_call(level="info")
         def post(self, request, *args, **kwargs):
             token = request.data.get("token")
 
             if not token:
                 APILogger.log_request(
-                    'warning',
-                    'Introspection Failed: Token not provided',
+                    "warning",
+                    "Introspection Failed: Token not provided",
                     request,
-                    {'validation_error': 'Token not provided'}
+                    {"validation_error": "Token not provided"},
                 )
                 return Response({"error": "Token not provided"}, status=400)
 
@@ -204,9 +211,72 @@ class JWTViews:
         summary="Obtener un par de tokens JWT",
         description="Endpoint para obtener un par de tokens de acceso y refresco JWT.",
         responses={200: OpenApiTypes.OBJECT},
+        parameters=[
+            OpenApiParameter(
+                name="X-App-Name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=True,
+            )
+        ],
     )
     class JWTObtainPairToken(TokenObtainPairView):
-        pass
+        serializer_class = APITokenObtainPairSerializer
+
+        def post(self, request, *args, **kwargs):
+            response = super().post(request, *args, **kwargs)
+            app_name = getattr(request, "app_name", None)
+            data = response.data
+
+            user = APIUser.objects.filter(email=request.data.get("email")).first()
+            if not user or not user.is_active:
+                raise serializers.ValidationError("Usuario no válido o inactivo")
+
+            if not check_password(request.data.get("password"), user.password):
+                raise serializers.ValidationError("Credenciales inválidas")
+
+            user_data = {
+                "username": user.username if user.is_authenticated else None,
+                "is_staff": user.is_staff,
+            }
+
+            response.set_cookie(
+                key="app_name",
+                value=app_name,
+                expires=datetime.timedelta(days=7),
+                secure=True,
+                httponly=True,
+                domain="localhost",
+                samesite="None",  # O "Lax" si no necesitas acceso cross-origin estricto
+            )
+
+            response.set_cookie(
+                key="access_token",
+                value=data["access"],
+                expires=datetime.timedelta(days=7),
+                secure=True,
+                httponly=True,
+                domain="localhost",
+                samesite="None",  # O "Lax" si no necesitas acceso cross-origin estricto
+            )
+
+            response.set_cookie(
+                key="refresh_token",
+                value=data["refresh"],
+                expires=datetime.timedelta(days=30),
+                secure=True,
+                httponly=True,
+                domain="localhost",
+                samesite="None",  # O "Lax" si no necesitas acceso cross-origin estricto
+            )
+
+            # Combinar los datos originales con el mensaje
+            response.data = {
+                "message": "Token generado exitosamente",
+                **data,
+                **user_data,
+            }
+            return response
 
     @extend_schema(
         tags=["JWT"],
@@ -215,7 +285,73 @@ class JWTViews:
         responses={200: OpenApiTypes.OBJECT},
     )
     class JWTRefreshToken(TokenRefreshView):
-        pass
+        def post(self, request, *args, **kwargs):
+            response = super().post(request, *args, **kwargs)
+            data = response.data
+
+            response_data = {
+                "message": "Token refrescado exitosamente",
+                "access": data["access_token"],
+                "refresh": data["refresh_token"],
+            }
+            return Response(response_data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@extend_schema(
+    tags=["User"],
+    summary="Información del usuario actual",
+    description="Endpoint para obtener información del usuario actual.",
+    responses={200: APIUserSerializer},
+)
+def me(request):
+    print(request)
+    if not request.user.is_authenticated:
+        return Response({"error": "No se ha iniciado sesión"}, status=401)
+
+    user_data = {
+        "username": request.user.username,
+        "email": request.user.email,
+        "origin_app": request.user.origin_app,
+        "is_staff": request.user.is_staff,
+        # "date_joined": request.user.date_joined,
+    }
+    return Response(APIUserSerializer(user_data).data)
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # @action(detail=False, methods=["post"])
+    def post(self, request):
+        APILogger.log_request(
+            "info",
+            "Logout request",
+            request,
+            {"user_id": request.user.id},
+        )
+
+        token = request.COOKIES.get("access_token")
+
+        if token:
+            # Implement blacklist token handling
+            pass
+
+        # Delete the cookies
+        response = Response()
+        response.delete_cookie("app_name", domain="localhost")
+        response.delete_cookie("access_token", domain="localhost")
+        response.delete_cookie("refresh_token", domain="localhost")
+
+        APILogger.log_request(
+            "info",
+            "Logout successfully",
+            request,
+            {"user_id": request.user.id},
+        )
+
+        return response
 
 
 @extend_schema(
@@ -231,7 +367,7 @@ class JWTViews:
             description="Nombre de la aplicación cliente",
             required=True,
         )
-    ]
+    ],
 )
 class UserViewSet(ModelViewSet):
     queryset = APIUser.objects.all()

@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 from datetime import datetime
 from functools import wraps
 
@@ -17,6 +17,13 @@ class APILogger:
         """
         Extrae los datos de la solicitud HTTP.
         """
+        try:
+            body = json.loads(request.body.decode('utf-8')) if request.body else {}
+            if isinstance(body, dict) and 'password' in body:
+                body = '[FILTERED]'
+        except (json.JSONDecodeError, AttributeError):
+            body = '[UNREADABLE]'
+
         return {
             'method': request.method,
             'path': request.path,
@@ -26,8 +33,7 @@ class APILogger:
             'auth_type': getattr(request, 'auth_type', None),
             'headers': dict(request.headers),
             'query_params': dict(request.GET),
-            # Evitar loguear datos sensibles
-            'body': '[FILTERED]' if 'password' in request.data else request.data,
+            'body': body,  # Ahora está protegido contra recursion infinita
         }
 
     @staticmethod
