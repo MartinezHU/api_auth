@@ -41,7 +41,13 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
         ],
     )
 
-    password = serializers.CharField(
+    password1 = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+    )
+
+    password2 = serializers.CharField(
         write_only=True,
         required=True,
         style={"input_type": "password"},
@@ -49,10 +55,10 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = APIUser
-        fields = ["email", "password"]
+        fields = ["email", "password1", "password2"]
 
     @staticmethod
-    def validate_password(value):
+    def validate_password1(value):
         """
         Valida que la contraseña cumpla con los requisitos de seguridad.
         Utiliza una expresión regular para mayor eficiencia.
@@ -73,14 +79,28 @@ class APIUserRegistrationSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate(self, attrs):
+        """
+        Validar que las contraseñas coincidan y realizar validaciones adicionales si es necesario.
+        """
+        if attrs["password1"] != attrs["password2"]:
+            raise serializers.ValidationError({"password2": "Las contraseñas no coinciden."})
+
+        # Podemos agregar más validaciones cruzadas aquí si es necesario
+        return attrs
+
     def create(self, validated_data):
         """
         Crea un nuevo usuario API con los datos validados.
         """
         try:
-            return APIUser.objects.create_user(
-                email=validated_data["email"], password=validated_data["password"]
+            validated_data.pop("password2")
+            password = validated_data["password1"]
+
+            user = APIUser.objects.create_user(
+                email=validated_data["email"], password=password
             )
+            return user
         except Exception as e:
             raise serializers.ValidationError(f"Error al crear el usuario: {e}") from e
 

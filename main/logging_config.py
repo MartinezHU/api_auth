@@ -17,13 +17,6 @@ class APILogger:
         """
         Extrae los datos de la solicitud HTTP.
         """
-        try:
-            body = json.loads(request.body.decode('utf-8')) if request.body else {}
-            if isinstance(body, dict) and 'password' in body:
-                body = '[FILTERED]'
-        except (json.JSONDecodeError, AttributeError):
-            body = '[UNREADABLE]'
-
         return {
             'method': request.method,
             'path': request.path,
@@ -33,7 +26,8 @@ class APILogger:
             'auth_type': getattr(request, 'auth_type', None),
             'headers': dict(request.headers),
             'query_params': dict(request.GET),
-            'body': body,  # Ahora está protegido contra recursion infinita
+            # Evitar loguear datos sensibles
+            'body': '[FILTERED]' if 'password' in request.data else request.data,
         }
 
     @staticmethod
