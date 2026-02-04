@@ -1,0 +1,741 @@
+openapi: 3.0.3
+info:
+  title: ''
+  version: 0.0.0
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: v1_auth_logout_create
+      description: Endpoint para cerrar sesión y eliminar cookies de autenticación.
+      summary: Cerrar sesión
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutResponse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutResponse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutResponse'
+        required: true
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+          description: ''
+  /api/v1/auth/me/:
+    get:
+      operationId: v1_auth_me_retrieve
+      description: Endpoint para obtener información del usuario actual.
+      summary: Información del usuario actual
+      tags:
+      - User
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+          description: ''
+  /api/v1/auth/o/introspect/:
+    post:
+      operationId: introspect_token
+      description: Endpoint para introspección de tokens OAuth2.
+      summary: Introspección de un token de acceso
+      tags:
+      - OAuth2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntrospectToken'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntrospectToken'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntrospectToken'
+        required: true
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/o/revoke_token/:
+    post:
+      operationId: revoke_token
+      description: Endpoint para revocar tokens OAuth2.
+      summary: Revocar un token de acceso
+      tags:
+      - OAuth2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthRevoke'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthRevoke'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OAuthRevoke'
+        required: true
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/o/token/:
+    post:
+      operationId: token_obtain_pair
+      description: "\n                    Endpoint para obtener tokens OAuth2. Soporta\
+        \ los siguientes grant types:\n                    - password: Para credenciales\
+        \ de usuario\n                    - authorization_code: Para flujo de autorización\n\
+        \                    - refresh_token: Para renovar tokens\n              \
+        \      "
+      summary: Obtener un token de acceso
+      tags:
+      - OAuth2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OAuthTokenRequest'
+        required: true
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthTokenRequest'
+          description: ''
+  /api/v1/auth/signup/:
+    post:
+      operationId: v1_auth_signup_create
+      description: Endpoint para registro de usuarios.
+      summary: Registro de usuario
+      parameters:
+      - in: header
+        name: X-App-Name
+        schema:
+          type: string
+        description: Nombre de la aplicación cliente
+        required: true
+      tags:
+      - SignUp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIUserRegistration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/APIUserRegistration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/APIUserRegistration'
+        required: true
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignUpResponse'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: v1_auth_token_create
+      description: Endpoint para obtener un par de tokens de acceso y refresco JWT.
+      summary: Obtener un par de tokens JWT
+      parameters:
+      - in: header
+        name: X-App-Name
+        schema:
+          type: string
+        required: true
+      tags:
+      - JWT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APITokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/APITokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/APITokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: v1_auth_token_refresh_create
+      description: Endpoint para renovar un token JWT usando un token de refresco.
+      summary: Renovar un token JWT
+      tags:
+      - JWT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/users/:
+    get:
+      operationId: v1_auth_users_list
+      description: Endpoint para la gestión de usuarios.
+      summary: Gestión de usuarios
+      parameters:
+      - in: header
+        name: X-App-Name
+        schema:
+          type: string
+        description: Nombre de la aplicación cliente
+        required: true
+      tags:
+      - User
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/APIUser'
+          description: ''
+  /api/v1/auth/users/{id}/:
+    get:
+      operationId: v1_auth_users_retrieve
+      description: Endpoint para la gestión de usuarios.
+      summary: Gestión de usuarios
+      parameters:
+      - in: header
+        name: X-App-Name
+        schema:
+          type: string
+        description: Nombre de la aplicación cliente
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api user.
+        required: true
+      tags:
+      - User
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIUser'
+          description: ''
+    put:
+      operationId: v1_auth_users_update
+      description: Endpoint para la gestión de usuarios.
+      summary: Gestión de usuarios
+      parameters:
+      - in: header
+        name: X-App-Name
+        schema:
+          type: string
+        description: Nombre de la aplicación cliente
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api user.
+        required: true
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/APIUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/APIUser'
+        required: true
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIUser'
+          description: ''
+    delete:
+      operationId: v1_auth_users_destroy
+      description: Endpoint para la gestión de usuarios.
+      summary: Gestión de usuarios
+      parameters:
+      - in: header
+        name: X-App-Name
+        schema:
+          type: string
+        description: Nombre de la aplicación cliente
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api user.
+        required: true
+      tags:
+      - User
+      security:
+      - cookieJWT: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIUser'
+          description: ''
+components:
+  schemas:
+    APITokenObtainPair:
+      type: object
+      description: Serializador para la obtención de pares de tokens JWT.
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    APIUser:
+      type: object
+      description: Serializador para el modelo de usuario API.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        is_superuser:
+          type: boolean
+          title: Estado de superusuario
+          description: Indica que este usuario tiene todos los permisos sin asignárselos
+            explícitamente.
+        username:
+          type: string
+          nullable: true
+          maxLength: 100
+        origin_app:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/OriginAppEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - email
+      - id
+    APIUserRegistration:
+      type: object
+      description: |-
+        Serializador para el registro de usuarios API.
+        Maneja la validación y creación de nuevos usuarios.
+      properties:
+        email:
+          type: string
+          format: email
+        password1:
+          type: string
+          writeOnly: true
+        password2:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password1
+      - password2
+    BlankEnum:
+      enum:
+      - ''
+    GrantTypeEnum:
+      enum:
+      - password
+      - authorization_code
+      - refresh_token
+      type: string
+      description: |-
+        * `password` - password
+        * `authorization_code` - authorization_code
+        * `refresh_token` - refresh_token
+    IntrospectToken:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    LogoutResponse:
+      type: object
+      description: Serializador para la respuesta de logout.
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    MeResponse:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        origin_app:
+          type: string
+        is_staff:
+          type: boolean
+      required:
+      - email
+      - is_staff
+      - origin_app
+      - username
+    NullEnum:
+      enum:
+      - null
+    OAuthRevoke:
+      type: object
+      description: Serializador para la revocación de tokens OAuth2.
+      properties:
+        token:
+          type: string
+          description: Token a revocar
+        token_type_hint:
+          allOf:
+          - $ref: '#/components/schemas/TokenTypeHintEnum'
+          description: |-
+            Tipo de token a revocar
+
+            * `access_token` - access_token
+            * `refresh_token` - refresh_token
+      required:
+      - token
+    OAuthTokenRequest:
+      type: object
+      description: Serializador para la solicitud de tokens OAuth2.
+      properties:
+        client_id:
+          type: string
+          description: ID de la aplicación cliente
+        client_secret:
+          type: string
+          description: Clave secreta de la aplicación cliente
+        username:
+          type: string
+          description: Email del usuario
+        password:
+          type: string
+          description: Contraseña del usuario
+        code:
+          type: string
+          description: Código de autorización
+        redirect_uri:
+          type: string
+          description: URI de redirección
+        grant_type:
+          allOf:
+          - $ref: '#/components/schemas/GrantTypeEnum'
+          description: |-
+            Tipo de grant OAuth2
+
+            * `password` - password
+            * `authorization_code` - authorization_code
+            * `refresh_token` - refresh_token
+        scope:
+          type: string
+          description: Scopes solicitados
+      required:
+      - client_id
+      - grant_type
+    OriginAppEnum:
+      enum:
+      - pedidos
+      - mi_app_web
+      - api_blog
+      type: string
+      description: |-
+        * `pedidos` - PEDIDOS
+        * `mi_app_web` - MI APP WEB
+        * `api_blog` - API BLOG
+    SignUpResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        app:
+          type: string
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - app
+      - message
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    TokenTypeHintEnum:
+      enum:
+      - access_token
+      - refresh_token
+      type: string
+      description: |-
+        * `access_token` - access_token
+        * `refresh_token` - refresh_token
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token stored in 'access_token' cookie. Obtain via login endpoint.
+    oauth2:
+      type: oauth2
+      flows: {}
