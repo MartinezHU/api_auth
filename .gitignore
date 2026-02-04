@@ -11,6 +11,7 @@ venv/
 .env
 *.env
 *.venv
+api_auth/
 
 # Archivos de dependencias
 pip-log.txt
