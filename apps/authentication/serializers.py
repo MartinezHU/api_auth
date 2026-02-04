@@ -189,3 +189,22 @@ class APITokenObtainPairSerializer(serializers.Serializer):
         }
 
         return data
+
+
+class LogoutResponseSerializer(serializers.Serializer):
+    """
+    Serializador para la respuesta de logout.
+    """
+
+    message = serializers.CharField()
+
+
+class MeResponseSerializer(serializers.Serializer):
+    """
+    Serializador para la información del usuario actual.
+    """
+
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    origin_app = serializers.CharField()
+    is_staff = serializers.BooleanField()

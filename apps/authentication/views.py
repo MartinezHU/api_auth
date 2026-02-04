@@ -5,7 +5,6 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
 from oauth2_provider.views import TokenView, IntrospectTokenView
 from rest_framework import serializers
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,6 +18,8 @@ from apps.authentication.serializers import (
     OAuthRevokeSerializer,
     APIUserSerializer,
     APITokenObtainPairSerializer,
+    LogoutResponseSerializer,
+    MeResponseSerializer,
 )
 from apps.authentication.tasks import send_user_to_queue
 from apps.authentication.utils import generate_auth_token
@@ -47,7 +48,7 @@ from main.logging_config import log_api_call, APILogger
         OpenApiParameter(
             name="X-App-Name",
             type=OpenApiTypes.STR,
-            location=OpenApiParameter.HEADER,
+            location="header",
             description="Nombre de la aplicación cliente",
             required=True,
         )
@@ -215,7 +216,7 @@ class JWTViews:
             OpenApiParameter(
                 name="X-App-Name",
                 type=OpenApiTypes.STR,
-                location=OpenApiParameter.HEADER,
+                location="header",
                 required=True,
             )
         ],
@@ -297,33 +298,51 @@ class JWTViews:
             return Response(response_data)
 
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
+from rest_framework.generics import GenericAPIView
+
+
+# ...existing code...
+
 @extend_schema(
     tags=["User"],
     summary="Información del usuario actual",
     description="Endpoint para obtener información del usuario actual.",
-    responses={200: APIUserSerializer},
+    responses={
+        200: inline_serializer(
+            name="MeResponseSerializer",
+            fields={
+                "username": serializers.CharField(),
+                "email": serializers.EmailField(),
+                "origin_app": serializers.CharField(),
+                "is_staff": serializers.BooleanField(),
+            },
+        )
+    },
 )
-def me(request):
-    print(request)
-    if not request.user.is_authenticated:
-        return Response({"error": "No se ha iniciado sesión"}, status=401)
+class MeView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MeResponseSerializer
 
-    user_data = {
-        "username": request.user.username,
-        "email": request.user.email,
-        "origin_app": request.user.origin_app,
-        "is_staff": request.user.is_staff,
-        # "date_joined": request.user.date_joined,
-    }
-    return Response(APIUserSerializer(user_data).data)
+    def get(self, request):
+        user_data = {
+            "username": request.user.username,
+            "email": request.user.email,
+            "origin_app": request.user.origin_app,
+            "is_staff": request.user.is_staff,
+        }
+        return Response(user_data)
 
 
+@extend_schema(
+    tags=["User"],
+    summary="Cerrar sesión",
+    description="Endpoint para cerrar sesión y eliminar cookies de autenticación.",
+    responses={200: LogoutResponseSerializer},
+)
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = LogoutResponseSerializer
 
-    # @action(detail=False, methods=["post"])
     def post(self, request):
         APILogger.log_request(
             "info",
@@ -339,7 +358,10 @@ class LogoutView(APIView):
             pass
 
         # Delete the cookies
-        response = Response()
+        response = Response(
+            {"message": "Sesión cerrada exitosamente"},
+            status=200
+        )
         response.delete_cookie("app_name", domain="localhost")
         response.delete_cookie("access_token", domain="localhost")
         response.delete_cookie("refresh_token", domain="localhost")
@@ -363,7 +385,7 @@ class LogoutView(APIView):
         OpenApiParameter(
             name="X-App-Name",
             type=OpenApiTypes.STR,
-            location=OpenApiParameter.HEADER,
+            location="header",
             description="Nombre de la aplicación cliente",
             required=True,
         )

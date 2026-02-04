@@ -8,7 +8,7 @@ from apps.authentication.views import (
     OAuthViews,
     JWTViews,
     UserViewSet,
-    me,
+    MeView,
     LogoutView,
 )
 
@@ -60,7 +60,7 @@ urlpatterns = [
             ]
         ),
     ),
-    path("me/", me, name="me"),
-    path("logout/", LogoutView.as_view(), name="me"),
+    path("me/", MeView.as_view(), name="me"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path("", include(router.urls)),
 ]
