@@ -287,21 +287,110 @@ class JWTViews:
     )
     class JWTRefreshToken(TokenRefreshView):
         def post(self, request, *args, **kwargs):
-            response = super().post(request, *args, **kwargs)
-            data = response.data
+            try:
+                response = super().post(request, *args, **kwargs)
+                data = response.data
 
-            response_data = {
-                "message": "Token refrescado exitosamente",
-                "access": data["access_token"],
-                "refresh": data["refresh_token"],
-            }
-            return Response(response_data)
+                response_data = {
+                    "message": "Token refrescado exitosamente",
+                    "access": data["access_token"],
+                    "refresh": data["refresh_token"],
+                }
+                return Response(response_data)
+            except serializers.ValidationError as e:
+                # Capturar específicamente errores de token expirado o inválido
+                if "token" in str(e).lower() or "invalid" in str(e).lower():
+                    APILogger.log_request(
+                        "warning",
+                        "Token refresh failed - Invalid or expired refresh token",
+                        request,
+                        {"error": str(e)},
+                    )
+                    return Response(
+                        {
+                            "error": "Token de refresco inválido o expirado. Por favor, inicia sesión de nuevo.",
+                            "detail": str(e)
+                        },
+                        status=401,
+                    )
+                raise
+
+    @extend_schema(
+        tags=["JWT"],
+        summary="Revocar un token JWT",
+        description="Endpoint para revocar un token JWT.",
+        request=inline_serializer(
+            name="RevokeTokenSerializer",
+            fields={
+                "token": serializers.CharField(),
+            },
+        ),
+        responses={
+            200: OpenApiTypes.OBJECT,
+            # 400: OpenApiTypes.OBJECT,
+            # 401: OpenApiTypes.OBJECT,
+        },
+    )
+    class JWTRevokeToken(APIView):
+        permission_classes = [IsAuthenticated]
+
+        def post(self, request, *args, **kwargs):
+            from apps.authentication.models import TokenBlacklist
+
+            # Obtener token del body o de las cookies
+            token = request.data.get("token") or request.COOKIES.get("access_token")
+            refresh_token = request.data.get("refresh_token") or request.COOKIES.get("refresh_token")
+
+            if not token and not refresh_token:
+                APILogger.log_request(
+                    "warning",
+                    "Token revocation failed - Token not provided",
+                    request,
+                    {"validation_error": "Token not provided"},
+                )
+                return Response({"error": "Token no proporcionado"}, status=400)
+
+            user_id = request.user.id
+            revoked_count = 0
+
+            # Revocar access token si existe
+            if token:
+                success = TokenBlacklist.revoke_token(token, user_id, "access")
+                if success:
+                    revoked_count += 1
+
+            # Revocar refresh token si existe
+            if refresh_token:
+                success = TokenBlacklist.revoke_token(refresh_token, user_id, "refresh")
+                if success:
+                    revoked_count += 1
+
+            if revoked_count > 0:
+                APILogger.log_request(
+                    "info",
+                    f"Token(s) revoked successfully - Count: {revoked_count}",
+                    request,
+                    {"user_id": user_id, "revoked_count": revoked_count},
+                )
+                return Response(
+                    {"message": f"Token(s) revocado(s) exitosamente ({revoked_count})"},
+                    status=200
+                )
+            else:
+                APILogger.log_request(
+                    "warning",
+                    "Token revocation failed - Unable to revoke tokens",
+                    request,
+                    {"user_id": user_id},
+                )
+                return Response(
+                    {"error": "No se pudo revocar el token"},
+                    status=400
+                )
 
 
 from rest_framework.generics import GenericAPIView
 
-
-# ...existing code...
 
 @extend_schema(
     tags=["User"],
@@ -344,6 +433,8 @@ class LogoutView(APIView):
     serializer_class = LogoutResponseSerializer
 
     def post(self, request):
+        from apps.authentication.models import TokenBlacklist
+
         APILogger.log_request(
             "info",
             "Logout request",
@@ -351,15 +442,29 @@ class LogoutView(APIView):
             {"user_id": request.user.id},
         )
 
-        token = request.COOKIES.get("access_token")
+        # Obtener tokens de las cookies
+        access_token = request.COOKIES.get("access_token")
+        refresh_token = request.COOKIES.get("refresh_token")
+        user_id = request.user.id
 
-        if token:
-            # Implement blacklist token handling
-            pass
+        # ✅ Revocar tokens JWT agregándolos a la blacklist
+        revoked_count = 0
+        if access_token:
+            success = TokenBlacklist.revoke_token(access_token, user_id, "access")
+            if success:
+                revoked_count += 1
 
-        # Delete the cookies
+        if refresh_token:
+            success = TokenBlacklist.revoke_token(refresh_token, user_id, "refresh")
+            if success:
+                revoked_count += 1
+
+        # Eliminar las cookies
         response = Response(
-            {"message": "Sesión cerrada exitosamente"},
+            {
+                "message": "Sesión cerrada exitosamente",
+                "tokens_revoked": revoked_count
+            },
             status=200
         )
         response.delete_cookie("app_name", domain="localhost")
@@ -368,9 +473,9 @@ class LogoutView(APIView):
 
         APILogger.log_request(
             "info",
-            "Logout successfully",
+            f"Logout successfully - Tokens revoked: {revoked_count}",
             request,
-            {"user_id": request.user.id},
+            {"user_id": user_id, "tokens_revoked": revoked_count},
         )
 
         return response
