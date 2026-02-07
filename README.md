@@ -102,6 +102,40 @@ métodos de autenticación dependiendo de la aplicación que lo consuma.
 
 7. En caso de despliegue, configurar `wsgi.py` correctamente según el servidor o proyecto.
 
+## 🛠️ Comandos de Mantenimiento
+
+### Limpiar tokens JWT expirados de la blacklist
+
+El sistema de revocación JWT almacena tokens revocados en una blacklist hasta que expiran. Para mantener la base de
+datos limpia:
+
+```bash
+python manage.py cleanup_expired_tokens
+```
+
+**¿Cuándo ejecutarlo?**
+
+- **Desarrollo:** Manualmente cuando lo necesites
+- **Producción:** Configurar en cron para ejecutar diariamente
+
+**Ejemplo de cron (ejecutar diariamente a las 2 AM):**
+
+```bash
+0 2 * * * cd /ruta/proyecto && source venv/bin/activate && python manage.py cleanup_expired_tokens >> /var/log/cleanup_tokens.log 2>&1
+```
+
+**Resultado:**
+
+```
+Limpiando tokens expirados...
+✓ Limpieza completada: X token(s) expirado(s) eliminado(s)
+```
+
+## 📚 Documentación Adicional
+
+- **Sistema de Blacklist JWT:** Ver `RESUMEN_JWT_BLACKLIST.md` para detalles técnicos
+- **Testing:** Ejecutar `python test_jwt_blacklist.py` para pruebas del sistema de revocación
+
 ### Por implementar
 
 1. Gestión persistente de la cosa de mensajes con RabbitMQ (Permitir reintentos, recuperación de cola, etc.)

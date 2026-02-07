@@ -4,7 +4,9 @@ from .base import *
 DEBUG = False
 
 # Lista de hosts permitidos en producción
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(" ")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS")
 
 # Configuración de la base de datos para producción
 DATABASES["default"]["HOST"] = os.getenv("DB_HOST", "db_production")

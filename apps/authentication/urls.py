@@ -22,6 +22,7 @@ urlpatterns = [
     # Rutas para JWT
     path("token/", JWTViews.JWTObtainPairToken.as_view(), name="token_obtain_pair"),
     path("token/refresh/", JWTViews.JWTRefreshToken.as_view(), name="token_refresh"),
+    path("token/revoke/", JWTViews.JWTRevokeToken.as_view(), name="token_revoke"),
     # Rutas para OAuth2
     # Incluye las siguientes rutas de django-oauth-toolkit:
     # - o/authorize/: Autorización del usuario para la aplicación cliente.

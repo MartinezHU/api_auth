@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 
 from main.config.base import SECRET_KEY
@@ -15,7 +16,6 @@ OAUTH2_PROVIDER = {
     },
 }
 
-
 # Configuración de autenticación JWT (Simple JWT)
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),
@@ -23,7 +23,7 @@ SIMPLE_JWT = {
     # "ROTATE_REFRESH_TOKENS": True,
     # "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
-    "ALGORITHM": "HS256",
+    "ALGORITHM": os.environ.get("ALGORITHM"),
     "SIGNING_KEY": SECRET_KEY,  # Clave secreta para firmar los tokens
     "ISSUER": "api_auth",  # Emisor del token
     "USER_ID_FIELD": "id",

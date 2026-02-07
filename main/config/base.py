@@ -18,11 +18,6 @@ env = environ.Env(
 # SECRET_KEY: clave secreta de Django para seguridad de la aplicación
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# DEBUG: modo de depuración de Django. No activar en producción
-DEBUG = env("DEBUG")
-
-ALLOWED_HOSTS = []
-
 # Importación de configuraciones específicas
 from .installed_apps import INSTALLED_APPS
 from .authentication import SIMPLE_JWT as JWT, OAUTH2_PROVIDER as OAUTH2, AUTH_METHODS_BY_APP as AUTH_METHODS
