@@ -42,4 +42,5 @@ AUTH_METHODS_BY_APP = {
     "app_blog": "jwt",
     "api_tienda": "oauth2",
     "mi_app_externa": "firebase",
+    "scootergy": "jwt",
 }

@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from datetime import timedelta
 from enum import Enum
 
 from oauth2_provider.models import AccessToken as OAuthAccessToken, RefreshToken as OAuthRefreshToken, Application
@@ -72,3 +73,26 @@ def generate_oauth2_token(user):
         "refresh": refresh_token.token,
         "expires": expires.timestamp(),
     }
+
+
+def generate_service_token(*, service_name: str, user_id: str) -> str:
+    """
+    Genera un token JWT para la comunicación entre servicios.
+
+    Args:
+        service_name: Nombre del servicio que se autentica
+        user_id: ID del usuario asociado al token
+
+    Returns:
+        str: Token JWT codificado
+
+    Raises:
+        ValueError: Si hay errores al generar el token
+    """
+    token = JWTAccessToken()
+    token['typ'] = 'service'
+    token['service'] = service_name
+    token['user_id'] = user_id
+
+    token.set_exp(lifetime=timedelta(minutes=5))
+    return str(token)

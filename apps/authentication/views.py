@@ -21,9 +21,9 @@ from apps.authentication.serializers import (
     LogoutResponseSerializer,
     MeResponseSerializer,
 )
-from apps.authentication.tasks import send_user_to_queue
 from apps.authentication.utils import generate_auth_token
 from main.logging_config import log_api_call, APILogger
+from apps.services.domain_user import notify_domain_user
 
 
 # Create your views here.
@@ -90,14 +90,6 @@ class SignUpViewSet(ModelViewSet):
                 user_update.origin_app = app_name
                 user_update.save()
 
-            # Log de creación de usuario exitosa
-            APILogger.log_request(
-                "info",
-                f"User Created Successfully: {user.id}",
-                request,
-                {"user_id": str(user.id)},
-            )
-
             # Generamos los tokens de autenticación según el tipo
             token_data = generate_auth_token(user, auth_type)
 
@@ -110,7 +102,9 @@ class SignUpViewSet(ModelViewSet):
             headers = self.get_success_headers(serializer.data)
 
             # Llamamos a la tarea de Celery para enviar los datos a RabbitMQ
-            send_user_to_queue.delay(user.id, auth_type)
+            # send_user_to_queue.delay(user.id, auth_type)
+
+            notify_domain_user(user.id)
 
             return Response(response_data, headers=headers)
 
